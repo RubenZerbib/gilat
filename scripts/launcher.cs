@@ -1,12 +1,13 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 
 class ClinicLauncher
 {
     static string root;
+    const int PORT = 4300;
 
     static int Main()
     {
@@ -20,7 +21,6 @@ class ClinicLauncher
 
         Banner();
 
-        // ── 1. Node.js ───────────────────────────────
         if (!CommandExists("node"))
         {
             Error("Node.js is not installed or not in PATH.");
@@ -29,7 +29,6 @@ class ClinicLauncher
         }
         Ok("Node.js found");
 
-        // ── 2. Dependencies ──────────────────────────
         if (!Directory.Exists(Path.Combine(root, "node_modules")))
         {
             Status("Installing dependencies (first run)...");
@@ -40,7 +39,6 @@ class ClinicLauncher
         }
         Ok("Dependencies ready");
 
-        // ── 3. .env ──────────────────────────────────
         string envFile = Path.Combine(root, ".env");
         string envExample = Path.Combine(root, ".env.example");
         if (!File.Exists(envFile) && File.Exists(envExample))
@@ -49,7 +47,6 @@ class ClinicLauncher
         }
         Ok("Environment file ready");
 
-        // ── 4. Database ──────────────────────────────
         Status("Preparing database...");
         Run("npx", "prisma generate", true);
         if (Run("npx", "prisma db push --skip-generate", true) != 0)
@@ -58,15 +55,14 @@ class ClinicLauncher
         }
         Ok("Database ready");
 
-        // ── 5. Start server & open browser ───────────
         Console.WriteLine();
-        Status("Starting server on http://localhost:4300");
+        Status("Starting server on http://localhost:" + PORT);
         Status("Close this window to stop the server.");
         Console.WriteLine();
 
         Process server = StartServer();
 
-        Thread browserThread = new Thread(() => WaitAndOpen("http://localhost:4300", 60));
+        Thread browserThread = new Thread(() => WaitForPortAndOpen(PORT, 120));
         browserThread.IsBackground = true;
         browserThread.Start();
 
@@ -74,14 +70,12 @@ class ClinicLauncher
         return server.ExitCode;
     }
 
-    // ── Helpers ──────────────────────────────────────
-
     static void Banner()
     {
         Console.ForegroundColor = ConsoleColor.Cyan;
-        Console.WriteLine("╔══════════════════════════════════════════╗");
-        Console.WriteLine("║   Clinic Medical Form Signing System    ║");
-        Console.WriteLine("╚══════════════════════════════════════════╝");
+        Console.WriteLine("======================================");
+        Console.WriteLine("  Clinic Medical Form Signing System  ");
+        Console.WriteLine("======================================");
         Console.ResetColor();
         Console.WriteLine();
     }
@@ -89,7 +83,7 @@ class ClinicLauncher
     static void Ok(string msg)
     {
         Console.ForegroundColor = ConsoleColor.Green;
-        Console.Write("  [OK] ");
+        Console.Write("  [OK]  ");
         Console.ResetColor();
         Console.WriteLine(msg);
     }
@@ -97,7 +91,7 @@ class ClinicLauncher
     static void Status(string msg)
     {
         Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.Write("  [*]  ");
+        Console.Write("  [*]   ");
         Console.ResetColor();
         Console.WriteLine(msg);
     }
@@ -167,31 +161,33 @@ class ClinicLauncher
         return Process.Start(psi);
     }
 
-    static void WaitAndOpen(string url, int timeoutSec)
+    static void WaitForPortAndOpen(int port, int timeoutSec)
     {
         int elapsed = 0;
-        int interval = 800;
+        int interval = 600;
 
         while (elapsed < timeoutSec * 1000)
         {
             try
             {
-                var req = (HttpWebRequest)WebRequest.Create(url);
-                req.Timeout = 2000;
-                req.Method = "HEAD";
-                using (var resp = (HttpWebResponse)req.GetResponse())
+                using (var tcp = new TcpClient())
                 {
-                    if ((int)resp.StatusCode < 400)
-                    {
-                        Console.WriteLine();
-                        Ok("Server is up! Opening browser...");
-                        Console.WriteLine();
-                        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-                        return;
-                    }
+                    tcp.Connect("127.0.0.1", port);
+                    tcp.Close();
                 }
+
+                Console.WriteLine();
+                Ok("Server is up! Opening browser...");
+                Console.WriteLine();
+
+                string url = "http://localhost:" + port;
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+                return;
             }
-            catch { /* not ready yet */ }
+            catch
+            {
+                // port not listening yet
+            }
 
             Thread.Sleep(interval);
             elapsed += interval;

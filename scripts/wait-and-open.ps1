@@ -1,26 +1,28 @@
 param(
-    [string]$Url = "http://localhost:4300",
-    [int]$TimeoutSeconds = 60,
+    [int]$Port = 4300,
+    [int]$TimeoutSeconds = 120,
     [int]$IntervalMs = 500
 )
 
+$url = "http://localhost:$Port"
 $elapsed = 0
-Write-Host "Waiting for $Url ..." -ForegroundColor Cyan
+Write-Host "Waiting for server on port $Port ..." -ForegroundColor Cyan
 
 while ($elapsed -lt ($TimeoutSeconds * 1000)) {
     try {
-        $response = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
-        if ($response.StatusCode -eq 200) {
-            Write-Host "Server is up! Opening browser..." -ForegroundColor Green
-            Start-Process $Url
-            exit 0
-        }
+        $tcp = New-Object System.Net.Sockets.TcpClient
+        $tcp.Connect("127.0.0.1", $Port)
+        $tcp.Close()
+
+        Write-Host "Server is up! Opening browser..." -ForegroundColor Green
+        Start-Process $url
+        exit 0
     } catch {
-        # server not ready yet
+        # port not open yet
     }
     Start-Sleep -Milliseconds $IntervalMs
     $elapsed += $IntervalMs
 }
 
-Write-Host "Timed out after $TimeoutSeconds seconds waiting for $Url" -ForegroundColor Red
+Write-Host "Timed out after $TimeoutSeconds seconds." -ForegroundColor Red
 exit 1
