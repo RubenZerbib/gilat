@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model SignedForm {
+  id        String   @id @default(cuid())
+  fullName  String
+  idNumber  String
+  answers   String
+  pdfPath   String
+  createdAt DateTime @default(now())
+
+  @@index([idNumber])
+  @@index([fullName])
+}
+
+model AdminUser {
+  id           String @id @default(cuid())
+  username     String @unique
+  passwordHash String
+}
