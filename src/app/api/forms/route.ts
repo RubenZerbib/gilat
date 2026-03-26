@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { formSchema } from "@/lib/validation";
 import { generateSignedPdf } from "@/lib/pdf-generator";
+import { ZodError } from "zod";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,15 +27,20 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, id: record.id }, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.name === "ZodError") {
+    console.error("Form submission error:", error);
+
+    if (error instanceof ZodError) {
       return NextResponse.json(
-        { success: false, errors: (error as unknown as { errors: unknown[] }).errors },
+        { success: false, errors: error.errors },
         { status: 400 }
       );
     }
-    console.error("Form submission error:", error);
+
+    const message =
+      error instanceof Error ? error.message : "Unknown server error";
+
     return NextResponse.json(
-      { success: false, error: "שגיאה בשליחת הטופס" },
+      { success: false, error: message },
       { status: 500 }
     );
   }
@@ -74,9 +80,8 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Forms fetch error:", error);
-    return NextResponse.json(
-      { error: "שגיאה בטעינת הטפסים" },
-      { status: 500 }
-    );
+    const message =
+      error instanceof Error ? error.message : "Unknown server error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -16,6 +16,12 @@ function sanitizeFilename(str: string): string {
   return str.replace(/[^a-zA-Z0-9\u0590-\u05FF_-]/g, "_").substring(0, 50);
 }
 
+function decodeBase64Png(dataUrl: string): Buffer {
+  const commaIndex = dataUrl.indexOf(",");
+  const raw = commaIndex !== -1 ? dataUrl.substring(commaIndex + 1) : dataUrl;
+  return Buffer.from(raw, "base64");
+}
+
 export async function generateSignedPdf(formData: FormData): Promise<string> {
   const templatePath = path.join(process.cwd(), "public", "template.pdf");
 
@@ -35,9 +41,8 @@ export async function generateSignedPdf(formData: FormData): Promise<string> {
   const pages = pdfDoc.getPages();
   const dateStr = formatDate();
 
-  const signatureImage = await pdfDoc.embedPng(
-    Buffer.from(formData.signature.split(",")[1], "base64")
-  );
+  const sigBytes = decodeBase64Png(formData.signature);
+  const signatureImage = await pdfDoc.embedPng(sigBytes);
 
   // --- PAGE 1: Personal Info ---
   const page1 = pages[0];
