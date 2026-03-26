@@ -41,3 +41,4 @@ prisma/dev.db-journal
 
 # storage
 /storage/
+dev.db
