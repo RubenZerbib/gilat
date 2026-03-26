@@ -1,4 +1,5 @@
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
 import * as fs from "fs";
 import * as path from "path";
 import { PDF_FIELD_MAPPING, MEDICAL_QUESTIONS, type SignaturePosition } from "@/config/pdf-mapping";
@@ -22,6 +23,20 @@ function decodeBase64Png(dataUrl: string): Buffer {
   return Buffer.from(raw, "base64");
 }
 
+async function loadHebrewFont(pdfDoc: PDFDocument) {
+  pdfDoc.registerFontkit(fontkit);
+
+  const fontPath = path.join(process.cwd(), "public", "fonts", "Heebo-Regular.ttf");
+  if (!fs.existsSync(fontPath)) {
+    throw new Error(
+      `Hebrew font not found at ${fontPath}. Place Heebo-Regular.ttf in public/fonts/`
+    );
+  }
+
+  const fontBytes = fs.readFileSync(fontPath);
+  return pdfDoc.embedFont(fontBytes);
+}
+
 export async function generateSignedPdf(formData: FormData): Promise<string> {
   const templatePath = path.join(process.cwd(), "public", "template.pdf");
 
@@ -37,7 +52,7 @@ export async function generateSignedPdf(formData: FormData): Promise<string> {
     pdfDoc.addPage([595.28, 841.89]);
   }
 
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const font = await loadHebrewFont(pdfDoc);
   const pages = pdfDoc.getPages();
   const dateStr = formatDate();
 
@@ -87,7 +102,7 @@ export async function generateSignedPdf(formData: FormData): Promise<string> {
   for (const question of MEDICAL_QUESTIONS) {
     const pos = p2[question.id as keyof typeof p2];
     if (pos) {
-      const answer = formData.medicalAnswers[question.id] ? "V" : "X";
+      const answer = formData.medicalAnswers[question.id] ? "כן" : "לא";
       page2.drawText(answer, {
         x: pos.x,
         y: pos.y,
