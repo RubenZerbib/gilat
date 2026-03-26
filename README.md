@@ -34,12 +34,28 @@ Digital signing system for a cosmetic clinic. Clients fill out a multi-step form
 
 ## Setup
 
+### Quick Start (Windows)
+
+Double-click **`start_app.bat`** — it handles everything automatically:
+
+1. Verifies Node.js is installed
+2. Runs `npm install` (first time only)
+3. Creates `.env` from `.env.example` if missing
+4. Runs Prisma migrations / pushes the schema
+5. Starts the dev server
+6. Opens `http://localhost:3000` in your default browser once the server is ready
+
+> **Requirement:** [Node.js 18+](https://nodejs.org) must be installed and available in PATH.
+
+### Manual Setup (any OS)
+
 ```bash
 # Install dependencies
 npm install
 
 # Set up environment
-cp .env.example .env
+cp .env.example .env      # Linux/macOS
+copy .env.example .env    # Windows cmd
 
 # Initialize database
 npx prisma db push
