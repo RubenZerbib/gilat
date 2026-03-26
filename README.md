@@ -52,7 +52,7 @@ It will:
 2. Create the `.env` config file
 3. Prepare the SQLite database
 4. Start the local server
-5. Open `http://localhost:3000` in your browser automatically
+5. Open `http://localhost:4300` in your browser automatically
 
 Close the console window to stop the server.
 

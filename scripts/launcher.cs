@@ -60,13 +60,13 @@ class ClinicLauncher
 
         // ── 5. Start server & open browser ───────────
         Console.WriteLine();
-        Status("Starting server on http://localhost:3000");
+        Status("Starting server on http://localhost:4300");
         Status("Close this window to stop the server.");
         Console.WriteLine();
 
         Process server = StartServer();
 
-        Thread browserThread = new Thread(() => WaitAndOpen("http://localhost:3000", 60));
+        Thread browserThread = new Thread(() => WaitAndOpen("http://localhost:4300", 60));
         browserThread.IsBackground = true;
         browserThread.Start();
 

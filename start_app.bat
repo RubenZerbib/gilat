@@ -52,7 +52,7 @@ echo  [OK] Database ready
 
 :: ── 5. Start dev server + open browser ────────
 echo.
-echo  [*]  Starting server on http://localhost:3000
+echo  [*]  Starting server on http://localhost:4300
 echo       Close this window to stop the server.
 echo.
 
