@@ -42,3 +42,6 @@ prisma/dev.db-journal
 # storage
 /storage/
 dev.db
+
+# compiled launcher
+ClinicForm.exe

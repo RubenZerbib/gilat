@@ -34,33 +34,39 @@ Digital signing system for a cosmetic clinic. Clients fill out a multi-step form
 
 ## Setup
 
-### Quick Start (Windows)
+### One-Click Launch (Windows `.exe`)
 
-Double-click **`start_app.bat`** — it handles everything automatically:
+> **Prerequisite:** [Node.js 18+](https://nodejs.org) must be installed.
 
-1. Verifies Node.js is installed
-2. Runs `npm install` (first time only)
-3. Creates `.env` from `.env.example` if missing
-4. Runs Prisma migrations / pushes the schema
-5. Starts the dev server
-6. Opens `http://localhost:3000` in your default browser once the server is ready
+#### Step 1 — Build the launcher (once)
 
-> **Requirement:** [Node.js 18+](https://nodejs.org) must be installed and available in PATH.
+Double-click **`build_exe.bat`**.  
+This compiles `ClinicForm.exe` using the C# compiler that ships with Windows — no installs needed.
+
+#### Step 2 — Run the app
+
+Double-click **`ClinicForm.exe`**.  
+It will:
+
+1. Install npm dependencies (first run only)
+2. Create the `.env` config file
+3. Prepare the SQLite database
+4. Start the local server
+5. Open `http://localhost:3000` in your browser automatically
+
+Close the console window to stop the server.
+
+#### Alternative — batch script (no build step)
+
+If you prefer not to build the `.exe`, double-click **`start_app.bat`** instead.  
+It does exactly the same thing.
 
 ### Manual Setup (any OS)
 
 ```bash
-# Install dependencies
 npm install
-
-# Set up environment
-cp .env.example .env      # Linux/macOS
-copy .env.example .env    # Windows cmd
-
-# Initialize database
+cp .env.example .env      # Linux/macOS  (or: copy .env.example .env  on Windows)
 npx prisma db push
-
-# Run development server
 npm run dev
 ```
 
