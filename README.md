@@ -1,36 +1,117 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Clinic Medical Form Signing System
 
-## Getting Started
+Digital signing system for a cosmetic clinic. Clients fill out a multi-step form on a tablet (iPad), sign with their finger, and the system generates a signed PDF from the original template.
 
-First, run the development server:
+## Architecture
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+┌─────────────────────────────────────────────┐
+│  Client (iPad/Tablet)                       │
+│  ┌─────────┐  ┌──────────┐  ┌───────────┐  │
+│  │ Step 1  │→ │  Step 2  │→ │  Step 3   │  │
+│  │Personal │  │ Medical  │  │ Signature │  │
+│  └─────────┘  └──────────┘  └───────────┘  │
+└──────────────────┬──────────────────────────┘
+                   │ POST /api/forms
+┌──────────────────▼──────────────────────────┐
+│  Next.js API Route                          │
+│  1. Validate (Zod)                          │
+│  2. Generate PDF (pdf-lib)                  │
+│  3. Save to filesystem                      │
+│  4. Store record in DB (Prisma/SQLite)      │
+└─────────────────────────────────────────────┘
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Next.js 14** (App Router)
+- **TypeScript**
+- **Tailwind CSS**
+- **Prisma** + SQLite
+- **pdf-lib** for PDF generation
+- **react-signature-canvas** for signature capture
+- **Zod** + React Hook Form for validation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Setup
 
-## Learn More
+```bash
+# Install dependencies
+npm install
 
-To learn more about Next.js, take a look at the following resources:
+# Set up environment
+cp .env.example .env
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Initialize database
+npx prisma db push
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Run development server
+npm run dev
+```
 
-## Deploy on Vercel
+## Environment Variables
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DATABASE_URL` | SQLite database path | `file:./dev.db` |
+| `ADMIN_USERNAME` | Admin panel username | `admin` |
+| `ADMIN_PASSWORD` | Admin panel password | `clinic2024!` |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## PDF Template
+
+Place your 3-page clinic PDF template at:
+
+```
+public/template.pdf
+```
+
+If no template exists, the system creates a blank 3-page PDF.
+
+Adjust field coordinates in `src/config/pdf-mapping.ts`.
+
+## Routes
+
+| Path | Description |
+|------|-------------|
+| `/` | Client form (multi-step) |
+| `/success` | Submission confirmation |
+| `/admin` | Admin login |
+| `/admin/forms` | Admin dashboard (search, view, download) |
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/forms` | Submit signed form |
+| `GET` | `/api/forms` | List forms (with search) |
+| `GET` | `/api/forms/:id` | Get form details |
+| `GET` | `/api/forms/:id?download=true` | Download PDF |
+| `POST` | `/api/admin/auth` | Admin login |
+| `DELETE` | `/api/admin/auth` | Admin logout |
+
+## File Storage
+
+Signed PDFs are stored at:
+
+```
+storage/signed-forms/YYYY/MM/<idNumber>_<fullName>_<date>.pdf
+```
+
+## Hebrew Font Support
+
+The current implementation uses Helvetica for PDF text overlay. To add Hebrew font support:
+
+1. Place a Hebrew-compatible `.ttf` font in `public/fonts/`
+2. Update `src/lib/pdf-generator.ts` to embed the custom font via `pdfDoc.embedFont()`
+
+## Database Schema
+
+```prisma
+model SignedForm {
+  id        String   @id @default(cuid())
+  fullName  String
+  idNumber  String
+  answers   String   // JSON
+  pdfPath   String
+  createdAt DateTime @default(now())
+}
+```
