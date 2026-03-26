@@ -7,32 +7,11 @@ echo.
 echo  Building ClinicForm.exe ...
 echo.
 
-:: Try .NET Framework C# compiler (present on all Windows 10/11)
-set "CSC="
-for /f "delims=" %%i in ('dir /s /b /o-n "%WINDIR%\Microsoft.NET\Framework64\v*\csc.exe" 2^>nul') do (
-    if not defined CSC set "CSC=%%i"
-)
-if not defined CSC (
-    for /f "delims=" %%i in ('dir /s /b /o-n "%WINDIR%\Microsoft.NET\Framework\v*\csc.exe" 2^>nul') do (
-        if not defined CSC set "CSC=%%i"
-    )
-)
-
-if not defined CSC (
-    echo [ERROR] C# compiler not found.
-    echo         Ensure .NET Framework is installed ^(ships with Windows 10/11^).
-    pause
-    exit /b 1
-)
-
-echo  Using: %CSC%
-echo.
-
-"%CSC%" /nologo /optimize /target:exe /out:ClinicForm.exe scripts\launcher.cs
+powershell -ExecutionPolicy Bypass -NoProfile -File "%~dp0scripts\build.ps1"
 
 if %errorlevel% neq 0 (
     echo.
-    echo [ERROR] Compilation failed.
+    echo  [ERROR] Build failed. See errors above.
     pause
     exit /b 1
 )
